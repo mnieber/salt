@@ -1856,6 +1856,12 @@ def line(path, content=None, match=None, mode=None, location=None,
 
             salt '*' file.line /path/to/file content="CREATEMAIL_SPOOL=no" match="CREATE_MAIL_SPOOL=yes" mode="replace"
     '''
+    def _insert_at_location(body):
+        if location == 'start':
+            return os.linesep.join((content, body))
+        elif location == 'end':
+            return os.linesep.join((body, _get_line_indent(body[-1], content, indent) if body else content))
+
     path = os.path.realpath(os.path.expanduser(path))
     if not os.path.isfile(path):
         if not quiet:
@@ -1943,10 +1949,7 @@ def line(path, content=None, match=None, mode=None, location=None,
                 body = os.linesep.join(out)
 
         else:
-            if location == 'start':
-                body = os.linesep.join((content, body))
-            elif location == 'end':
-                body = os.linesep.join((body, _get_line_indent(body[-1], content, indent) if body else content))
+            body = _insert_at_location(body)
 
     elif mode == 'ensure':
         after = after and after.strip()
@@ -1984,6 +1987,10 @@ def line(path, content=None, match=None, mode=None, location=None,
                         del out[prev]
                 out.append(body[idx])
             body = os.linesep.join(out)
+
+        elif location:
+            if not body.count(content):
+                body = _insert_at_location(body)
 
         elif not before and after:
             _assert_occurrence(body, after, 'after')
