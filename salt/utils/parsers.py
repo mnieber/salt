@@ -2688,6 +2688,12 @@ class SaltCallOptionParser(six.with_metaclass(OptionParserMeta,
             help=('Do not load grains.')
         )
         self.add_option(
+            '--simple-progress',
+            default=False,
+            action='store_true',
+            help=('Show progress.')
+        )
+        self.add_option(
             '--refresh-grains-cache',
             default=False,
             action='store_true',

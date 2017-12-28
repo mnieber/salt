@@ -2105,6 +2105,9 @@ class State(object):
                         break
         running = {}
         for low in chunks:
+            if self.opts.get('simple_progress', False):
+                print("Running: %s" % low['__id__'])
+
             if '__FAILHARD__' in running:
                 running.pop('__FAILHARD__')
                 return running
