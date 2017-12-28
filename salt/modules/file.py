@@ -1862,6 +1862,18 @@ def line(path, content=None, match=None, mode=None, location=None,
         elif location == 'end':
             return os.linesep.join((body, _get_line_indent(body[-1], content, indent) if body else content))
 
+    def _replace(body):
+        new_lines = []
+        nr_of_matches = 0
+        for file_line in body.split(os.linesep):
+            if file_line.find(match) > -1:
+                nr_of_matches += 1
+                new_lines.append(_get_line_indent(file_line, content, indent))
+            else:
+                new_lines.append(file_line)
+
+        return os.linesep.join(new_lines), nr_of_matches
+
     path = os.path.realpath(os.path.expanduser(path))
     if not os.path.isfile(path):
         if not quiet:
@@ -1899,9 +1911,9 @@ def line(path, content=None, match=None, mode=None, location=None,
     elif mode == 'delete':
         body = os.linesep.join([line for line in body.split(os.linesep) if line.find(match) < 0])
     elif mode == 'replace':
-        body = os.linesep.join([(_get_line_indent(file_line, content, indent)
-                                if (file_line.find(match) > -1 and not file_line == content) else file_line)
-                                for file_line in body.split(os.linesep)])
+        new_body, nr_of_matches = _replace(body)
+        if nr_of_matches > 0:
+            body = new_body
     elif mode == 'insert':
         if not location and not before and not after:
             raise CommandExecutionError('On insert must be defined either "location" or "before/after" conditions.')
@@ -1987,6 +1999,18 @@ def line(path, content=None, match=None, mode=None, location=None,
                         del out[prev]
                 out.append(body[idx])
             body = os.linesep.join(out)
+
+        elif match:
+            new_body, nr_of_matches = _replace(body)
+            if nr_of_matches > 1:
+                raise CommandExecutionError(
+                    'More than 1 match found for %s in %s' % (match, path)
+                )
+
+            if nr_of_matches == 1:
+                body = new_body
+            elif location:
+                body = _insert_at_location(body)
 
         elif location:
             if not body.count(content):
