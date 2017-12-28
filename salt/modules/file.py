@@ -1911,9 +1911,11 @@ def line(path, content=None, match=None, mode=None, location=None,
     elif mode == 'delete':
         body = os.linesep.join([line for line in body.split(os.linesep) if line.find(match) < 0])
     elif mode == 'replace':
-        new_body, nr_of_matches = _replace(body)
-        if nr_of_matches > 0:
-            body = new_body
+        body, nr_of_matches = _replace(body)
+        if nr_of_matches == 0:
+            raise CommandExecutionError(
+                'No match found for %s in %s' % (match, path)
+            )
     elif mode == 'insert':
         if not location and not before and not after:
             raise CommandExecutionError('On insert must be defined either "location" or "before/after" conditions.')
