@@ -1860,7 +1860,12 @@ def line(path, content=None, match=None, mode=None, location=None,
         if location == 'start':
             return os.linesep.join((content, body))
         elif location == 'end':
-            return os.linesep.join((body, _get_line_indent(body[-1], content, indent) if body else content))
+            terminal = '' if content.endswith(os.linesep) else os.linesep
+            sep = '' if body.endswith(os.linesep) else os.linesep
+            return sep.join((
+                body,
+                _get_line_indent(body[-1], content, indent) if body else content
+            )) + terminal
 
     def _replace(body):
         new_lines = []

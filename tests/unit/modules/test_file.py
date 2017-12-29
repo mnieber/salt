@@ -984,7 +984,7 @@ class FilemodLineTests(TestCase, LoaderModuleMockMixin):
         '''
         cfg_content = 'everything: fantastic'
         file_content = 'file_roots:\n  base:\n    - /srv/salt\n    - /srv/sugar'
-        file_modified = 'file_roots:\n  base:\n    - /srv/salt\n    - /srv/sugar\n{0}'.format(cfg_content)
+        file_modified = 'file_roots:\n  base:\n    - /srv/salt\n    - /srv/sugar\n{0}\n'.format(cfg_content)
         files_fopen = mock_open(read_data=file_content)
         with patch('salt.utils.files.fopen', files_fopen):
             atomic_opener = mock_open()
