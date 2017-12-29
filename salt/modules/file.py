@@ -1867,11 +1867,14 @@ def line(path, content=None, match=None, mode=None, location=None,
                 _get_line_indent(body[-1], content, indent) if body else content
             )) + terminal
 
+    def _match(line):
+        return re.search(match, line, re.M)
+
     def _replace(body):
         new_lines = []
         nr_of_matches = 0
         for file_line in body.split(os.linesep):
-            if file_line.find(match) > -1:
+            if _match(file_line):
                 nr_of_matches += 1
                 new_lines.append(_get_line_indent(file_line, content, indent))
             else:
@@ -1908,13 +1911,12 @@ def line(path, content=None, match=None, mode=None, location=None,
     body_before = hashlib.sha256(salt.utils.stringutils.to_bytes(body)).hexdigest()
     after = _regex_to_static(body, after)
     before = _regex_to_static(body, before)
-    match = _regex_to_static(body, match)
 
     if os.stat(path).st_size == 0 and mode in ('delete', 'replace'):
         log.warning('Cannot find text to {0}. File \'{1}\' is empty.'.format(mode, path))
         body = ''
     elif mode == 'delete':
-        body = os.linesep.join([line for line in body.split(os.linesep) if line.find(match) < 0])
+        body = os.linesep.join([line for line in body.split(os.linesep) if not _match(line)])
     elif mode == 'replace':
         body, nr_of_matches = _replace(body)
         if nr_of_matches == 0:
