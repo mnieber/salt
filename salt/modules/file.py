@@ -1867,14 +1867,18 @@ def line(path, content=None, match=None, mode=None, location=None,
                 _get_line_indent(body[-1], content, indent) if body else content
             )) + terminal
 
-    def _match(line):
-        return re.search(match, line, re.M)
+    def _match(line, use_regex):
+        return (
+            re.search(match, line, re.M)
+            if use_regex else
+            match in line
+        )
 
-    def _replace(body):
+    def _replace(body, use_regex):
         new_lines = []
         nr_of_matches = 0
         for file_line in body.split(os.linesep):
-            if _match(file_line):
+            if _match(file_line, use_regex):
                 nr_of_matches += 1
                 new_lines.append(_get_line_indent(file_line, content, indent))
             else:
@@ -1905,6 +1909,9 @@ def line(path, content=None, match=None, mode=None, location=None,
     # Before/after has privilege. If nothing defined, match is used by content.
     if before is None and after is None and not match:
         match = content
+        use_regex = False
+    else:
+        use_regex = True
 
     with salt.utils.files.fopen(path, mode='r') as fp_:
         body = salt.utils.stringutils.to_unicode(fp_.read())
@@ -1916,9 +1923,9 @@ def line(path, content=None, match=None, mode=None, location=None,
         log.warning('Cannot find text to {0}. File \'{1}\' is empty.'.format(mode, path))
         body = ''
     elif mode == 'delete':
-        body = os.linesep.join([line for line in body.split(os.linesep) if not _match(line)])
+        body = os.linesep.join([line for line in body.split(os.linesep) if not _match(line, use_regex)])
     elif mode == 'replace':
-        body, nr_of_matches = _replace(body)
+        body, nr_of_matches = _replace(body, use_regex)
         if nr_of_matches == 0:
             raise CommandExecutionError(
                 'No match found for %s in %s' % (match, path)
@@ -2010,7 +2017,7 @@ def line(path, content=None, match=None, mode=None, location=None,
             body = os.linesep.join(out)
 
         elif match:
-            new_body, nr_of_matches = _replace(body)
+            new_body, nr_of_matches = _replace(body, use_regex)
             if nr_of_matches > 1:
                 raise CommandExecutionError(
                     'More than 1 match found for %s in %s' % (match, path)
